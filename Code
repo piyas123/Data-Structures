@@ -1,0 +1,119 @@
+?php
+
+namespace App\Http\Controllers\Admin;
+
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\SocialMediaIntegration.PA;
+use Auth;
+use Session;
+
+class SocialMediaIntegrationController extends Controller
+{
+    public function index(){
+        $lists = SocialMediaIntegration.PA::where('delete', '0')->orderBy('ordering', 'ASC')->get();
+        return view('admin.socialMediaIntegration.PA.index', compact('lists'));
+    }
+
+    public function create(){
+        return view('admin.socialMediaIntegration.PA.create');
+    }
+
+    public function store(Request $request){
+        $authID = Auth::user()->id;
+        $this->validate($request, ['title' => 'required', 'url' => 'required']);
+
+        $data = new SocialMediaIntegrationPA();
+        $data->created_by = $authID;
+        $data->title = $request['title'];
+        $data->url = $request['url'];
+        $data->save();
+        if ($data) {
+            Session::flash('success_message', 'Social Media has been Added Successfully');
+            return redirect('/admin/social-media-integration.PA');
+        } else {
+            Session::flash('error_message', 'Sorry! Error in creating details, please try again');
+            return redirect('/admin/social-media-integration.PA');
+        }
+    } 
+
+    public function edit($id){
+        $data = SocialMediaIntegration.PA::where('id', $id)->first();
+        return view('admin.socialMediaIntegration.PA.edit', compact('data'));
+    }
+
+    public function update(Request $request, $id){
+        //dd($request->all());
+        $authID = Auth::user()->id;
+        $this->validate($request, ['title' => 'required', 'url' => 'required']);
+
+        $data = SocialMediaIntegration.PA::where('id', $request->id)->first();
+        $data->created_by = $authID;
+        $data->title = $request['title'];
+        $data->url = $request['url'];
+        $data->save();
+        if ($data) {
+            Session::flash('success_message', 'Social Media has been Updated Successfully');
+            return redirect('/admin/social-media-integration.PA');
+        } else {
+            Session::flash('error_message', 'Sorry! Error in creating details, please try again');
+            return redirect('/admin/social-media-integration.PA');
+        }    
+    }
+
+    public function status(Request $request){
+        $authID = Auth::user()->id;
+        $getItem = SocialMediaIntegration.PA::where('id', $request->id)->first();
+        if(isset($getItem) && !empty($getItem)){
+            if($getItem->status == 1){
+                $status = 0;
+            }else{
+                $status = 1;
+            }
+            $data = SocialMediaIntegration.PA::where('id', $request->id)->first();
+            $data->status = $status;
+            $data->updated_by = $authID;
+            $data->save();
+            if ($data) {
+                Session::flash('success_message', 'Social Media Status has been changed Successfully');
+                return redirect('/admin/social-media-integration');
+            } else {
+                Session::flash('error_message', 'Sorry! Error in creating details, please try again');
+                return redirect('/admin/social-media-integration');
+            }
+        }        
+    }
+
+    public function delete(Request $request){
+        $authID = Auth::user()->id;
+        $data = SocialMediaIntegration.PA::where('id', $request->id)->first(); 
+        $data->delete = 1;
+        $data->updated_by = $authID;
+        $data->save();
+        if ($data) {
+            Session::flash('success_message', 'Social Media has been Removed Successfully');
+            return redirect('/admin/social-media-integration');
+        } else {
+            Session::flash('error_message', 'Sorry! Error in creating details, please try again');
+            return redirect('/admin/social-media-integration');
+        }
+    }
+
+    function saveOrder() {
+		if (isset($_POST['data'])) {
+			$authID = Auth::user()->id;
+			$data = $_POST['data'];
+			if (!empty($data)) {
+				$order = 1;
+				foreach ($data as $dataID) {
+					if (!empty($dataID)) {
+                        SocialMediaIntegration.PA::where(['id' => $dataID])->update(['ordering' => $order, 'updated_by' => $authID]);
+						$order++;
+					}
+				}
+				echo 1;
+			}
+		}
+		exit();
+	}
+}
